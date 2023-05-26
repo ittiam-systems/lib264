@@ -175,6 +175,9 @@ WORD32 ih264d_get_sei_mdcv_params(iv_obj_t *dec_hdl, void *pv_api_ip,
 WORD32 ih264d_get_sei_clli_params(iv_obj_t *dec_hdl, void *pv_api_ip,
                                  void *pv_api_op);
 
+WORD32 ih264d_get_sei_fgc_params(iv_obj_t *dec_hdl, void *pv_api_ip,
+                                 void *pv_api_op);
+
 WORD32 ih264d_set_num_cores(iv_obj_t *dec_hdl, void *pv_api_ip,
                             void *pv_api_op);
 
@@ -211,6 +214,8 @@ void ih264d_export_sei_params(ivd_sei_decode_op_t *ps_sei_decode_op,
   i4_status = ih264d_export_sei_mdcv_params(ps_sei_decode_op, ps_sei,
                                             &ps_dec->s_sei_export);
   i4_status = ih264d_export_sei_clli_params(ps_sei_decode_op, ps_sei,
+                                           &ps_dec->s_sei_export);
+  i4_status = ih264d_export_sei_fgc_params(ps_sei_decode_op, ps_sei,
                                            &ps_dec->s_sei_export);
 
   UNUSED(i4_status);
@@ -1162,6 +1167,31 @@ static IV_API_CALL_STATUS_T api_check_struct_sanity(iv_obj_t *ps_handle,
           break;
         }
 
+        case IH264D_CMD_CTL_GET_SEI_FGC_PARAMS:
+        {
+          ih264d_ctl_get_sei_fgc_params_ip_t *ps_ip;
+          ih264d_ctl_get_sei_fgc_params_op_t *ps_op;
+
+          ps_ip = (ih264d_ctl_get_sei_fgc_params_ip_t *) pv_api_ip;
+          ps_op = (ih264d_ctl_get_sei_fgc_params_op_t *) pv_api_op;
+
+          if(ps_ip->u4_size != sizeof(ih264d_ctl_get_sei_fgc_params_ip_t))
+          {
+            ps_op->u4_error_code |= 1 << IVD_UNSUPPORTEDPARAM;
+            ps_op->u4_error_code |= IVD_IP_API_STRUCT_SIZE_INCORRECT;
+            return IV_FAIL;
+          }
+
+          if(ps_op->u4_size != sizeof(ih264d_ctl_get_sei_fgc_params_op_t))
+          {
+            ps_op->u4_error_code |= 1 << IVD_UNSUPPORTEDPARAM;
+            ps_op->u4_error_code |= IVD_OP_API_STRUCT_SIZE_INCORRECT;
+            return IV_FAIL;
+          }
+
+          break;
+        }
+
         case IH264D_CMD_CTL_SET_NUM_CORES: {
           ih264d_ctl_set_num_cores_ip_t *ps_ip;
           ih264d_ctl_set_num_cores_op_t *ps_op;
@@ -1970,6 +2000,7 @@ WORD32 ih264d_fill_num_mem_rec(void *pv_api_ip, void *pv_api_op) {
 
     u4_mem_size = 0;
     u4_mem_size += (((sizeof(dec_err_status_t) + 127) >> 7) << 7);
+    u4_mem_size += sizeof(sei);
     u4_mem_size += sizeof(sei);
     u4_mem_size += sizeof(dpb_commands_t);
     u4_mem_size += sizeof(dec_bit_stream_t);
@@ -3804,6 +3835,10 @@ WORD32 ih264d_ctl(iv_obj_t *dec_hdl, void *pv_api_ip, void *pv_api_op) {
       ret = ih264d_get_sei_clli_params(dec_hdl, (void *) pv_api_ip,
                                       (void *) pv_api_op);
       break;
+    case IH264D_CMD_CTL_GET_SEI_FGC_PARAMS:
+      ret = ih264d_get_sei_fgc_params(dec_hdl, (void *) pv_api_ip,
+                                      (void *) pv_api_op);
+      break;
     case IH264D_CMD_CTL_SET_PROCESSOR:
       ret =
           ih264d_set_processor(dec_hdl, (void *) pv_api_ip, (void *) pv_api_op);
@@ -4153,6 +4188,109 @@ void ih264d_fill_output_struct_from_context(dec_struct_t *ps_dec,
   ps_dec_op->u4_disp_buf_id = ps_dec->s_disp_op.u4_disp_buf_id;
 
   ih264d_export_sei_params(&ps_dec_op->s_sei_decode_op, ps_dec);
+}
+
+/*****************************************************************************/
+/*                                                                           */
+/*  Function Name : ih264d_get_sei_fgc_params                                */
+/*                                                                           */
+/*  Description   : This function populates SEI FGC message in               */
+/*                     output structure                                      */
+/*  Inputs        : iv_obj_t decoder handle                                  */
+/*                : pv_api_ip pointer to input structure                     */
+/*                : pv_api_op pointer to output structure                    */
+/*  Outputs       :                                                          */
+/*  Returns       : returns 0; 1 with error code when FGC is not present     */
+/*                                                                           */
+/*  Issues        : none                                                     */
+/*                                                                           */
+/*  Revision History:                                                        */
+/*                                                                           */
+/*         DD MM YYYY   Author(s)       Changes (Describe the changes made)  */
+/*                                                                           */
+/*                                                                           */
+/*****************************************************************************/
+WORD32 ih264d_get_sei_fgc_params(iv_obj_t *dec_hdl, void *pv_api_ip, void *pv_api_op)
+{
+    ih264d_ctl_get_sei_fgc_params_ip_t *ps_ip;
+    ih264d_ctl_get_sei_fgc_params_op_t *ps_op;
+    dec_struct_t *ps_dec = dec_hdl->pv_codec_handle;
+    sei_fgc_params_t *ps_sei_fgc;
+    WORD32 i4_count;
+    UWORD32 c, i, j;
+
+    ps_ip = (ih264d_ctl_get_sei_fgc_params_ip_t *) pv_api_ip;
+    ps_op = (ih264d_ctl_get_sei_fgc_params_op_t *) pv_api_op;
+    UNUSED(ps_ip);
+
+    if(0 == ps_dec->s_sei_export.u1_sei_fgc_params_present_flag)
+    {
+        ps_op->u4_error_code = ERROR_SEI_FGC_PARAMS_NOT_FOUND;
+        return IV_FAIL;
+    }
+
+    ps_sei_fgc = &ps_dec->s_sei_export.s_sei_fgc_params;
+
+    ps_op->u1_film_grain_characteristics_cancel_flag =
+        ps_sei_fgc->u1_film_grain_characteristics_cancel_flag;
+
+    if(0 == ps_op->u1_film_grain_characteristics_cancel_flag)
+    {
+        ps_op->i4_poc = ps_sei_fgc->i4_poc;
+        ps_op->u4_idr_pic_id = ps_sei_fgc->u4_idr_pic_id;
+        ps_op->u1_film_grain_model_id = ps_sei_fgc->u1_film_grain_model_id;
+        ps_op->u1_separate_colour_description_present_flag =
+            ps_sei_fgc->u1_separate_colour_description_present_flag;
+
+        if(ps_op->u1_separate_colour_description_present_flag)
+        {
+            ps_op->u1_film_grain_bit_depth_luma_minus8 =
+                ps_sei_fgc->u1_film_grain_bit_depth_luma_minus8;
+            ps_op->u1_film_grain_bit_depth_chroma_minus8 =
+                ps_sei_fgc->u1_film_grain_bit_depth_chroma_minus8;
+            ps_op->u1_film_grain_full_range_flag = ps_sei_fgc->u1_film_grain_full_range_flag;
+            ps_op->u1_film_grain_colour_primaries = ps_sei_fgc->u1_film_grain_colour_primaries;
+            ps_op->u1_film_grain_transfer_characteristics =
+                ps_sei_fgc->u1_film_grain_transfer_characteristics;
+            ps_op->u1_film_grain_matrix_coefficients =
+                ps_sei_fgc->u1_film_grain_matrix_coefficients;
+        }
+        ps_op->u1_blending_mode_id = ps_sei_fgc->u1_blending_mode_id;
+        ps_op->u1_log2_scale_factor = ps_sei_fgc->u1_log2_scale_factor;
+
+        for(c = 0; c < SEI_FGC_NUM_COLOUR_COMPONENTS; c++)
+        {
+            ps_op->au1_comp_model_present_flag[c] = ps_sei_fgc->au1_comp_model_present_flag[c];
+        }
+
+        for(c = 0; c < SEI_FGC_NUM_COLOUR_COMPONENTS; c++)
+        {
+            if(ps_op->au1_comp_model_present_flag[c])
+            {
+                ps_op->au1_num_intensity_intervals_minus1[c] =
+                    ps_sei_fgc->au1_num_intensity_intervals_minus1[c];
+
+                ps_op->au1_num_model_values_minus1[c] = ps_sei_fgc->au1_num_model_values_minus1[c];
+
+                for(i = 0; i <= ps_op->au1_num_intensity_intervals_minus1[c]; i++)
+                {
+                    ps_op->au1_intensity_interval_lower_bound[c][i] =
+                        ps_sei_fgc->au1_intensity_interval_lower_bound[c][i];
+                    ps_op->au1_intensity_interval_upper_bound[c][i] =
+                        ps_sei_fgc->au1_intensity_interval_upper_bound[c][i];
+
+                    for(j = 0; j <= ps_op->au1_num_model_values_minus1[c]; j++)
+                    {
+                        ps_op->ai4_comp_model_value[c][i][j] =
+                            ps_sei_fgc->ai4_comp_model_value[c][i][j];
+                    }
+                }
+            }
+        }
+        ps_op->u4_film_grain_characteristics_repetition_period =
+            ps_sei_fgc->u4_film_grain_characteristics_repetition_period;
+    }
+    return IV_SUCCESS;
 }
 
 /*****************************************************************************/

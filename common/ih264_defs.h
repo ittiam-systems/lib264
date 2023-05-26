@@ -701,4 +701,11 @@ typedef enum {
 #define AMBIENT_LIGHT_X_UPPER_LIMIT 50000
 #define AMBIENT_LIGHT_Y_UPPER_LIMIT 50000
 
+/*
+ * @brief Below macros related to film grain characteristics SEI
+ */
+#define SEI_FGC_NUM_COLOUR_COMPONENTS_DEFS 3
+#define SEI_FGC_MAX_NUM_MODEL_VALUES_DEFS 6
+#define SEI_FGC_MAX_NUM_INTENSITY_INTERVALS_DEFS 256
+
 #endif /* IH264_DEFS_H_ */
