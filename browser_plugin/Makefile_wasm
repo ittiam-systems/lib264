@@ -1,0 +1,58 @@
+SRCS=decode-avc.c
+
+BLOB=buffer-handler.c
+
+LIB=lib264dec_emcc
+
+TARGET=decode-avc.js
+
+DEPS=$(SRCS) Makefile_wasm
+
+all: $(TARGET)
+
+$(TARGET): $(DEPS) buffer-handler.c
+		emcc -o $@ -O3 -s WASM=1 \
+		-s ALLOW_MEMORY_GROWTH=1 \
+		-s PTHREAD_POOL_SIZE=4 \
+		-s MODULARIZE \
+		-s EXPORT_NAME=Create_AVC_Decoder \
+		-s EXPORTED_FUNCTIONS="['_AVC_Decoder_new', \
+		'_AVC_Decoder_get_init_params', \
+		'_AVC_Decoder_set_fgs', \
+		'_AVC_Decoder_set_fgs_transform', \
+		'_AVC_Decoder_set_fgs_blk_size', \
+		'_AVC_Decoder_set_fgs_chroma', \
+		'_AVC_Decoder_set_num_cores', \
+		'_AVC_Decoder_set_fps', \
+		'_AVC_initDecoder', \
+		'_AVC_Decoder_destroy', \
+		'_AVC_Decoder_set_source', \
+		'_AVC_Decoder_run', \
+		'_AVC_Decoder_get_width', \
+		'_AVC_Decoder_get_height', \
+		'_AVC_Decoder_video_reset', \
+		'_AVC_Decoder_video_finished', \
+		'_AVC_Decoder_get_frame', \
+		'_AVC_Video_Frame_get_buffer', \
+		'_AVC_Video_Frame_get_y_buffer', \
+		'_AVC_Video_Frame_get_u_buffer', \
+		'_AVC_Video_Frame_get_v_buffer', \
+		'_AVC_Decoder_get_y_strd', \
+		'_AVC_Decoder_get_y_wd', \
+		'_AVC_Decoder_get_y_ht', \
+		'_AVC_Decoder_get_u_strd', \
+		'_AVC_Decoder_get_u_wd', \
+		'_AVC_Decoder_get_u_ht', \
+		'_AVC_Decoder_get_v_strd', \
+		'_AVC_Decoder_get_v_wd', \
+		'_AVC_Decoder_get_v_ht', \
+		'_Buffer_Handler_open', \
+		'_Buffer_Handler_close', \
+		'_Buffer_Handler_set_buffer', \
+		'_malloc', '_free' \
+		]" \
+		-s IMPORTED_MEMORY \
+		$(BLOB) $(SRCS) -L. -l$(LIB) -pthread
+
+clean:
+		-rm $(TARGET)

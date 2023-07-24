@@ -1,0 +1,136 @@
+EMAR=emar
+
+CC=emcc
+CXX=emcc
+TOOLPREFIX = emcc
+
+CFLAGS+=  -ftree-vectorize -Wno-unused-variable
+CFLAGS+=  -D_LIB -Wall  
+
+CFLAGS+=-O3
+
+CFLAGS += -m32
+
+TARGETEXTN=$(TOOLPREFIX).a
+OBJEXTN=$(TOOLPREFIX).o
+
+TARGET=liblib264dec_$(TARGETEXTN)
+
+INCLUDES+=-I../common/
+INCLUDES+=-I../common/x86/
+INCLUDES+=-I../decoder/
+INCLUDES+=-I../decoder/api/
+INCLUDES+=-I../libthread/include/
+
+CFLAGS += -UX86_MINGW
+CFLAGS += -DWIN32 
+CFLAGS += -D_DEBUG -D_MBCS -D_LIB 
+CFLAGS += -UDEBUG_DEC 
+
+CFLAGS+=-DDEFAULT_ARCH=D_ARCH_X86_SSE42
+
+#warn about declarations after statements
+CFLAGS += -Wdeclaration-after-statement 
+
+CFLAGS += $(INCLUDES)
+CFLAGS += -pthread
+CFLAGS_SSE42 = $(CFLAGS) -msse4.2 -msimd128
+CFLAGS_SSSE3 = $(CFLAGS) -mssse3 -msimd128
+
+SRCS += ../decoder/ih264d_debug.c
+SRCS += ../decoder/x86/ih264d_function_selector.c
+
+ifneq "$(DISABLE_SIMD)" "yes"
+SRCS += ../decoder/x86/ih264d_function_selector_sse42.c
+SRCS += ../decoder/x86/ih264d_function_selector_ssse3.c
+CFLAGS += -DENABLE_SIMD
+endif
+
+SRCS += ../decoder/ih264d_function_selector_generic.c
+SRCS += ../decoder/ih264d_cabac.c 
+SRCS += ../decoder/ih264d_cabac_init_tables.c 
+SRCS += ../decoder/ih264d_bitstrm.c 
+SRCS += ../decoder/ih264d_compute_bs.c 
+SRCS += ../decoder/ih264d_inter_pred.c
+SRCS += ../decoder/ih264d_parse_mb_header.c 
+SRCS += ../decoder/ih264d_deblocking.c 
+SRCS += ../decoder/ih264d_parse_headers.c 
+SRCS += ../decoder/ih264d_mb_utils.c 
+SRCS += ../decoder/ih264d_mvpred.c 
+SRCS += ../decoder/ih264d_process_bslice.c 
+SRCS += ../decoder/ih264d_process_pslice.c 
+SRCS += ../decoder/ih264d_parse_slice.c 
+SRCS += ../decoder/ih264d_quant_scaling.c 
+SRCS += ../decoder/ih264d_process_intra_mb.c 
+SRCS += ../decoder/ih264d_parse_cavlc.c 
+SRCS += ../decoder/ih264d_utils.c 
+SRCS += ../decoder/ih264d_parse_cabac.c 
+SRCS += ../decoder/ih264d_dpb_mgr.c 
+SRCS += ../decoder/ih264d_nal.c 
+SRCS += ../decoder/ih264d_parse_bslice.c 
+SRCS += ../decoder/ih264d_parse_pslice.c 
+SRCS += ../decoder/ih264d_parse_islice.c 
+SRCS += ../decoder/ih264d_sei.c 
+SRCS += ../decoder/ih264d_tables.c 
+SRCS += ../decoder/ih264d_vui.c
+SRCS += ../decoder/ih264d_thread_parse_decode.c
+SRCS += ../decoder/ih264d_thread_compute_bs.c
+SRCS += ../decoder/ih264d_api.c
+SRCS += ../decoder/ih264d_format_conv.c
+
+SRCS += ../common/ih264_buf_mgr.c
+SRCS += ../common/ih264_disp_mgr.c
+SRCS += ../common/ih264_inter_pred_filters.c
+SRCS += ../common/ih264_luma_intra_pred_filters.c
+SRCS += ../common/ih264_chroma_intra_pred_filters.c
+SRCS += ../common/ih264_padding.c
+SRCS += ../common/ih264_mem_fns.c
+SRCS += ../common/ih264_deblk_edge_filters.c
+SRCS += ../common/ih264_iquant_itrans_recon.c
+SRCS += ../common/ih264_ihadamard_scaling.c
+SRCS += ../common/ih264_weighted_pred.c
+
+SRCS += ../libthread/src/ithread.c
+
+ifneq "$(DISABLE_SIMD)" "yes"
+SRCS_SSSE3 += ../common/x86/ih264_inter_pred_filters_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_deblk_luma_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_deblk_chroma_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_padding_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_mem_fns_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_iquant_itrans_recon_dc_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_iquant_itrans_recon_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_luma_intra_pred_filters_ssse3.c
+SRCS_SSSE3 += ../common/x86/ih264_chroma_intra_pred_filters_ssse3.c
+SRCS_SSE42 += ../common/x86/ih264_iquant_itrans_recon_sse42.c
+SRCS_SSE42 += ../common/x86/ih264_weighted_pred_sse42.c
+SRCS_SSE42 += ../common/x86/ih264_ihadamard_scaling_sse42.c
+endif
+
+OBJS  = $(SRCS:.c=.$(OBJEXTN))
+ifneq "$(DISABLE_SIMD)" "yes"
+C_OBJS_SSE42  = $(SRCS_SSE42:.c=.$(OBJEXTN))
+C_OBJS_SSSE3  = $(SRCS_SSSE3:.c=.$(OBJEXTN))
+endif
+
+.PHONY: all
+all: $(TARGET)
+
+$(OBJS): %.$(OBJEXTN): %.c 
+	$(CC) -c $(CFLAGS) $*.c -o $*.$(OBJEXTN)
+
+ifneq "$(DISABLE_SIMD)" "yes"
+$(C_OBJS_SSE42): %.$(OBJEXTN): %.c 
+	$(CC) -c $(CFLAGS_SSE42) $*.c -o $*.$(OBJEXTN)
+
+$(C_OBJS_SSSE3): %.$(OBJEXTN): %.c 
+	$(CC) -c $(CFLAGS_SSSE3) $*.c -o $*.$(OBJEXTN)	
+
+endif
+
+$(TARGET): $(OBJS) $(C_OBJS_SSE42) $(C_OBJS_SSSE3) $(LIBS)
+	$(EMAR) rc $@ $(OBJS) $(C_OBJS_SSE42) $(C_OBJS_SSSE3)
+
+.PHONY: clean
+clean:
+	-rm -f $(OBJS) $(TARGET) $(C_OBJS_SSSE3) $(C_OBJS_SSE42)
