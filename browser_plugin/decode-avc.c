@@ -1006,8 +1006,35 @@ void AVC_Decoder_run(AVC_Decoder *ad, int multi_frame)
 
         ad->output_present = s_video_decode_op.u4_output_present;
 
+        ad->sei_fgc_params_present_flag = s_video_decode_op.s_sei_decode_op.u1_sei_fgc_params_present_flag;
         if(s_video_decode_op.u4_output_present)
         {
+            if(1 == s_video_decode_op.s_sei_decode_op.u1_sei_fgc_params_present_flag)
+            {
+                ih264d_ctl_get_sei_fgc_params_ip_t s_ctl_get_sei_fgc_params_ip;
+                ih264d_ctl_get_sei_fgc_params_op_t s_ctl_get_sei_fgc_params_op;
+
+                memset(&s_ctl_get_sei_fgc_params_ip, 0, sizeof(ih264d_ctl_get_sei_fgc_params_ip_t));
+                memset(&s_ctl_get_sei_fgc_params_op, 0, sizeof(ih264d_ctl_get_sei_fgc_params_op_t));
+
+                s_ctl_get_sei_fgc_params_ip.e_cmd = IVD_CMD_VIDEO_CTL;
+                s_ctl_get_sei_fgc_params_ip.e_sub_cmd =
+                    (IVD_CONTROL_API_COMMAND_TYPE_T) IH264D_CMD_CTL_GET_SEI_FGC_PARAMS;
+                s_ctl_get_sei_fgc_params_ip.u4_size = sizeof(ih264d_ctl_get_sei_fgc_params_ip_t);
+                s_ctl_get_sei_fgc_params_op.u4_size = sizeof(ih264d_ctl_get_sei_fgc_params_op_t);
+
+                status = ih264d_api_function((iv_obj_t *) ad->codec_obj,
+                                             (void *) &s_ctl_get_sei_fgc_params_ip,
+                                             (void *) &s_ctl_get_sei_fgc_params_op);
+
+                if(status != IV_SUCCESS)
+                {
+                    printf("\nError in setting FGS enable flag %x",
+                           s_ctl_get_sei_fgc_params_op.u4_error_code);
+                    return;
+                }
+            }
+
             AVC_Video_Frame *avf;
             avf = (AVC_Video_Frame *) malloc(sizeof(AVC_Video_Frame));
             avf->y_Buffer = (unsigned char *) ad->yBuf;
