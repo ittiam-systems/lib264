@@ -52,7 +52,6 @@
 typedef struct AVC_Decoder      AVC_Decoder;
 typedef struct AVC_Video_Frame  AVC_Video_Frame;
 typedef struct AVC_Video_Init_Params AVC_Video_Init_Params;
-typedef struct FilmGrainCharacteristicsStruct_t FilmGrainCharacteristicsStruct;
 
 typedef struct Buffer_Handler Buffer_Handler;
 
@@ -114,6 +113,8 @@ struct AVC_Decoder {
     UWORD32 expected_time;
 
     UWORD32 first_frame_displayed;
+
+    UWORD32 sei_fgc_params_present_flag;
 
     UWORD32 output_present;
 };
@@ -280,8 +281,6 @@ void *AVC_Video_Frame_get_v_buffer(AVC_Video_Frame *avf);
 size_t AVC_Video_Frame_get_size(AVC_Video_Frame *avf);
 
 AVC_Video_Frame *AVC_Decoder_get_frame(AVC_Decoder *ad);
-
-void set_fgc_sei_params(ih264d_ctl_get_sei_fgc_params_op_t *sei, FilmGrainCharacteristicsStruct *fgc_sei);
 
 Buffer_Handler *Buffer_Handler_open();
 
