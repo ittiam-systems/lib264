@@ -46,19 +46,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
-#ifdef X86_MINGW
-#include <signal.h>
-#endif
+#include "ih264_typedefs.h"
+#include "iv.h"
+#include "ivd.h"
+#include "ih264d.h"
 
 #include "decode-avc-priv.h"
-
-#ifdef WINDOWS_TIMER
-// #include <windows.h>
-#else
-#include <sys/time.h>
-#endif
 
 #include <emscripten.h>
 
@@ -66,8 +60,6 @@ EMSCRIPTEN_KEEPALIVE
 
 #define ALIGN8(x) ((((x) + 7) >> 3) << 3)
 
-#define ENABLE_DEGRADE 0
-#define MAX_DISP_BUFFERS 64
 #define EXTRA_DISP_BUFFERS 8
 #define STRLENGTH 1000
 

@@ -5,12 +5,13 @@ BLOB=buffer-handler.c
 LIB=lib264dec_emcc
 
 TARGET=decode-avc.js
+TARGET_WORKER=decode-avc.worker.js
+TARGET_WASM=decode-avc.wasm
 
 DEPS=$(SRCS) Makefile_wasm
 
-INCLUDES+=-I../lib264/common/
-INCLUDES+=-I../lib264/decoder/api/
-INCLUDES+=-I../lib264/libthread/include/
+INCLUDES+=-I../common/
+INCLUDES+=-I../decoder/api/
 
 all: $(TARGET)
 
@@ -53,4 +54,4 @@ $(TARGET): $(DEPS) buffer-handler.c
 		$(BLOB) $(SRCS) -L. $(INCLUDES) -l$(LIB) -pthread
 
 clean:
-		-rm $(TARGET)
+		-rm $(TARGET) $(TARGET_WORKER) $(TARGET_WASM)

@@ -43,10 +43,6 @@
 ---------------------------------------------------------------
 */
 
-#include "../common/ih264_typedefs.h"
-#include "../decoder/api/iv.h"
-#include "../decoder/api/ivd.h"
-#include "../decoder/api/ih264d.h"
 #include <stdbool.h>
 
 typedef struct AVC_Decoder      AVC_Decoder;
