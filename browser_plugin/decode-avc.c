@@ -52,12 +52,6 @@
 #include <signal.h>
 #endif
 
-#include "../common/ih264_typedefs.h"
-#include "../decoder/api/iv.h"
-#include "../decoder/api/ivd.h"
-#include "../decoder/api/ih264d.h"
-#include "../libthread/include/ithread.h"
-
 #include "decode-avc-priv.h"
 
 #ifdef WINDOWS_TIMER
@@ -89,24 +83,15 @@ UWORD32 total_bytes_comsumed = 0;
 
 struct AVC_Video_Frame
 {
-    float avf_TimeStamp; /**< Time for this frame            */
-    void *avf_Buffer;    /**< Pointer to the decoded frame   */
-
     void *y_Buffer;
     void *u_Buffer;
     void *v_Buffer;
 
     iv_yuv_buf_t disp_stats;
-
-    size_t avf_BufferSize; /**< Bytes for the stored frame     */
 };
 
 struct AVC_Video_Init_Params
 {
-    int avi_fgs_enable;
-    int avi_fgs_blk_size;
-    int avi_fgs_transform;
-    int avi_fgs_chroma;
     int avi_num_cores;
     int avi_playback_fps;
 };
@@ -738,34 +723,9 @@ int AVC_initDecoder(AVC_Decoder *ad, AVC_Video_Init_Params *avip)
 
 void AVC_Decoder_set_source(AVC_Decoder *ad, Buffer_Handler *handle) { ad->ad_Buffer = handle; }
 
-void AVC_Decoder_set_fgs(AVC_Video_Init_Params *avip, int fgs_enable)
-{
-    avip->avi_fgs_enable = fgs_enable;
-}
-
-void AVC_Decoder_set_fgs_transform(AVC_Video_Init_Params *avip, int fgs_transform)
-{
-    avip->avi_fgs_transform = fgs_transform;
-}
-
-void AVC_Decoder_set_fgs_blk_size(AVC_Video_Init_Params *avip, int fgs_blk_size)
-{
-    avip->avi_fgs_blk_size = fgs_blk_size;
-}
-
-void AVC_Decoder_set_fgs_chroma(AVC_Video_Init_Params *avip, int fgs_chroma)
-{
-    avip->avi_fgs_chroma = fgs_chroma;
-}
-
 void AVC_Decoder_set_num_cores(AVC_Video_Init_Params *avip, int num_cores)
 {
     avip->avi_num_cores = num_cores;
-}
-
-void AVC_Decoder_set_fps(AVC_Video_Init_Params *avip, int playback_fps)
-{
-    avip->avi_playback_fps = playback_fps;
 }
 
 int decodeHeader(AVC_Decoder *ad, size_t timeStampIx)
@@ -1041,8 +1001,6 @@ void AVC_Decoder_run(AVC_Decoder *ad, int multi_frame)
             avf->u_Buffer = (unsigned char *) ad->uBuf;
             avf->v_Buffer = (unsigned char *) ad->vBuf;
 
-            avf->avf_TimeStamp = 0.0;  // TODO
-            avf->avf_BufferSize = ((ad->frame_width * ad->frame_height * 3) >> 1);
             avf->disp_stats = s_video_decode_op.s_disp_frm_buf;
             // Append the buffered frame
             ad->ad_Frames[ad->ad_NumBuffered] = avf;
@@ -1077,15 +1035,6 @@ int AVC_Decoder_get_height(AVC_Decoder *ad)
         return 0;
     }
     return ad->frame_height;
-}
-
-float AVC_Video_Frame_get_time(AVC_Video_Frame *avf)
-{
-    if(avf == NULL)
-    {
-        return 0.0;
-    }
-    return avf->avf_TimeStamp;
 }
 
 unsigned int AVC_Decoder_get_y_strd(AVC_Video_Frame *avf)
@@ -1169,15 +1118,6 @@ unsigned int AVC_Decoder_get_v_ht(AVC_Video_Frame *avf)
     return avf->disp_stats.u4_v_ht;
 }
 
-void *AVC_Video_Frame_get_buffer(AVC_Video_Frame *avf)
-{
-    if(avf == NULL)
-    {
-        return NULL;
-    }
-    return avf->avf_Buffer;
-}
-
 void *AVC_Video_Frame_get_y_buffer(AVC_Video_Frame *avf)
 {
     if(avf == NULL)
@@ -1201,15 +1141,6 @@ void *AVC_Video_Frame_get_v_buffer(AVC_Video_Frame *avf)
         return NULL;
     }
     return avf->v_Buffer;
-}
-
-size_t AVC_Video_Frame_get_size(AVC_Video_Frame *avf)
-{
-    if(avf == NULL)
-    {
-        return 0;
-    }
-    return avf->avf_BufferSize;
 }
 
 AVC_Video_Frame *AVC_Decoder_get_frame(AVC_Decoder *ad)

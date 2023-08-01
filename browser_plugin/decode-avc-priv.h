@@ -220,37 +220,13 @@ int AVC_Decoder_get_width(AVC_Decoder *ad);
 
 int AVC_Decoder_get_height(AVC_Decoder *ad);
 
-float AVC_Video_Frame_get_time(AVC_Video_Frame *avf);
-
-void *AVC_Video_Frame_get_buffer(AVC_Video_Frame *avf);
-
-size_t AVC_Video_Frame_get_size(AVC_Video_Frame *avf);
-
 AVC_Video_Frame *AVC_Decoder_get_frame(AVC_Decoder *ad);
 
 void AVC_Decoder_set_source(AVC_Decoder *ad, Buffer_Handler *handle);
 
-void AVC_Decoder_set_fgs(AVC_Video_Init_Params *avip, int fgs_enable);
-
-void AVC_Decoder_set_fgs_transform(AVC_Video_Init_Params *avip, int fgs_transform);
-
-void AVC_Decoder_set_fgs_blk_size(AVC_Video_Init_Params *avip, int fgs_blk_size);
-
-void AVC_Decoder_set_fgs_chroma(AVC_Video_Init_Params *avip, int fgs_chroma);
-
 void AVC_Decoder_set_num_cores(AVC_Video_Init_Params *avip, int num_cores);
 
-void AVC_Decoder_set_fps(AVC_Video_Init_Params *avip, int playback_fps);
-
 void AVC_Decoder_video_reset(AVC_Decoder *ad);
-
-int AVC_Decoder_video_finished(AVC_Decoder *ad);
-
-int AVC_Decoder_get_width(AVC_Decoder *ad);
-
-int AVC_Decoder_get_height(AVC_Decoder *ad);
-
-float AVC_Video_Frame_get_time(AVC_Video_Frame *avf);
 
 unsigned int AVC_Decoder_get_y_strd(AVC_Video_Frame *avf);
 
@@ -270,17 +246,11 @@ unsigned int AVC_Decoder_get_v_wd(AVC_Video_Frame *avf);
 
 unsigned int AVC_Decoder_get_v_ht(AVC_Video_Frame *avf);
 
-void *AVC_Video_Frame_get_buffer(AVC_Video_Frame *avf);
-
 void *AVC_Video_Frame_get_y_buffer(AVC_Video_Frame *avf);
 
 void *AVC_Video_Frame_get_u_buffer(AVC_Video_Frame *avf);
 
 void *AVC_Video_Frame_get_v_buffer(AVC_Video_Frame *avf);
-
-size_t AVC_Video_Frame_get_size(AVC_Video_Frame *avf);
-
-AVC_Video_Frame *AVC_Decoder_get_frame(AVC_Decoder *ad);
 
 Buffer_Handler *Buffer_Handler_open();
 
