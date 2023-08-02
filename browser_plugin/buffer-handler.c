@@ -45,14 +45,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "decode-avc-priv.h"
 
 /* Buffer_Handler for handling bitstream buffer */
-struct Buffer_Handler {
-    void        	*buffer_ptr;
-    unsigned int	buff_len;
-    unsigned int	buff_pos;
-};
+typedef struct {
+    void            *buffer_ptr;
+    unsigned int    buff_len;
+    unsigned int    buff_pos;
+}Buffer_Handler;
 
 Buffer_Handler *Buffer_Handler_open()
 {
@@ -66,10 +65,15 @@ Buffer_Handler *Buffer_Handler_open()
     return handle;
 }
 
+int Buffer_Handler_empty(Buffer_Handler *handle)
+{
+    return handle->buff_pos >= handle->buff_len;
+}
+
 unsigned int Buffer_Handler_read(
-	Buffer_Handler *handle,
-	unsigned char *buffer,
-	unsigned int num_bytes)
+    Buffer_Handler *handle,
+    unsigned char *buffer,
+    unsigned int num_bytes)
 {
     if (Buffer_Handler_empty(handle) || buffer == NULL)
     {
@@ -87,11 +91,6 @@ unsigned int Buffer_Handler_read(
     return num_bytes;
 }
 
-int Buffer_Handler_empty(Buffer_Handler *handle)
-{
-    return handle->buff_pos >= handle->buff_len;
-}
-
 void Buffer_Handler_close(Buffer_Handler *handle)
 {
     free(handle);
@@ -106,5 +105,5 @@ void Buffer_Handler_set_buffer(Buffer_Handler *handle, void *buf, unsigned int l
 
 void Buffer_Handler_update_pos(Buffer_Handler *handle, unsigned int pos)
 {
-	handle->buff_pos = pos;
+    handle->buff_pos = pos;
 }

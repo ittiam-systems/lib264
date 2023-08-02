@@ -5,8 +5,13 @@ BLOB=buffer-handler.c
 LIB=lib264dec_emcc
 
 TARGET=decode-avc.js
+TARGET_WORKER=decode-avc.worker.js
+TARGET_WASM=decode-avc.wasm
 
 DEPS=$(SRCS) Makefile_wasm
+
+INCLUDES+=-I../common/
+INCLUDES+=-I../decoder/api/
 
 all: $(TARGET)
 
@@ -18,12 +23,7 @@ $(TARGET): $(DEPS) buffer-handler.c
 		-s EXPORT_NAME=Create_AVC_Decoder \
 		-s EXPORTED_FUNCTIONS="['_AVC_Decoder_new', \
 		'_AVC_Decoder_get_init_params', \
-		'_AVC_Decoder_set_fgs', \
-		'_AVC_Decoder_set_fgs_transform', \
-		'_AVC_Decoder_set_fgs_blk_size', \
-		'_AVC_Decoder_set_fgs_chroma', \
 		'_AVC_Decoder_set_num_cores', \
-		'_AVC_Decoder_set_fps', \
 		'_AVC_initDecoder', \
 		'_AVC_Decoder_destroy', \
 		'_AVC_Decoder_set_source', \
@@ -33,7 +33,6 @@ $(TARGET): $(DEPS) buffer-handler.c
 		'_AVC_Decoder_video_reset', \
 		'_AVC_Decoder_video_finished', \
 		'_AVC_Decoder_get_frame', \
-		'_AVC_Video_Frame_get_buffer', \
 		'_AVC_Video_Frame_get_y_buffer', \
 		'_AVC_Video_Frame_get_u_buffer', \
 		'_AVC_Video_Frame_get_v_buffer', \
@@ -52,7 +51,7 @@ $(TARGET): $(DEPS) buffer-handler.c
 		'_malloc', '_free' \
 		]" \
 		-s IMPORTED_MEMORY \
-		$(BLOB) $(SRCS) -L. -l$(LIB) -pthread
+		$(BLOB) $(SRCS) -L. $(INCLUDES) -l$(LIB) -pthread
 
 clean:
-		-rm $(TARGET)
+		-rm $(TARGET) $(TARGET_WORKER) $(TARGET_WASM)
